@@ -29,7 +29,7 @@ echo " |_____/|_|  |_|\_____|_|     ";
 echo "                              ";
 echo "                              ";
 		echo ¿Que deseas hacer?;
-		echo 1. Crear ambito.;
+		echo 1. Ver concesiones;
 		echo 2. Añadir IP estatica.;
 		echo 3. Instalación;
 		echo 4. Reiniciar servidor;
@@ -39,8 +39,16 @@ echo "                              ";
 		read opciondhcp;
 			## Submenu de DHCP
 			case $opciondhcp in
-				1) echo has seleccionado la opcion 1;;
-				2)echo has seleccionado la opcion 2;;
+				1) cat/var/lib/dhcp/dhcpd.leases;;
+				2)echo -n "Introduce nombre del host: " 
+				read nombrehost
+				echo -n "Introduce MAC del host(xx:xx:xx:xx:xx:xx): "
+				read machost
+				echo -n "introduce IP: "
+				read iphost
+				sudo echo "$nombrehost {
+hardware ethernet $machost;
+ fixed-address $iphost;}" >> /etc/dhcp/dhcpd.conf;;
 				3)echo ASEGURATE DE TENER CONEXION A INTERNET
 				  echo instalando isc-dhcp-server...
 					sudo apt-get install isc-dhcp-server
@@ -100,9 +108,6 @@ subnet red1 netmask mascara {
 }
 
 
-#host fantasia {
-#  hardware ethernet 00:0C:29:61:78:B1;
-#  fixed-address 192.168.20.60;}
 " >> /etc/dhcp/dhcpd.conf
 ## sustitucion de los datos introducidos en el fichero de configuracion
 sed -i 's|dominiodhcp|"'$dominiodhcp'"|g' /etc/dhcp/dhcpd.conf
