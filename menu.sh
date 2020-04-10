@@ -12,8 +12,9 @@ echo "                           |_|                       |_|            ";
 echo "Por Antonio Cano Madrigal";
 echo " ";
 echo 1.DHCP.
-echo 2.Opciones del servidor.
-echo 3.Salir.
+echo 2.DNS
+echo 3.Opciones del servidor.
+echo 4.Salir.
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
@@ -39,7 +40,7 @@ echo "                              ";
 		read opciondhcp;
 			## Submenu de DHCP
 			case $opciondhcp in
-				1) cat/var/lib/dhcp/dhcpd.leases;;
+				1) cat /var/lib/dhcp/dhcpd.leases;;
 				2)echo -n "Introduce nombre del host: " 
 				read nombrehost
 				echo -n "Introduce MAC del host(xx:xx:xx:xx:xx:xx): "
@@ -133,7 +134,194 @@ echo DHCP configurado!!;;
 		#fin del submenu dhcp
 		esac
 ;;
-	2)echo cargando;
+2)clear;
+echo "  _____  _   _  _____ ";
+echo " |  __ \| \ | |/ ____|";
+echo " | |  | |  \| | (___  ";
+echo " | |  | | . \` |\___ \ ";
+echo " | |__| | |\  |____) |";
+echo " |_____/|_| \_|_____/ ";
+echo "                      ";
+echo "                      ";
+echo 1.Añadir zona
+echo 2.Instalación
+echo -n "Elige una opcion: "
+read opciondns
+case $opciondns in 
+		1) echo has elegido la opcion 1;;
+		2)echo Se va a empezar a instalar y configurar el servidor DNS
+		echo ASEGURATE DE TENER CONEXION A INTERNET
+		sleep 3
+		apt-get install bind9
+#vaciamos y cargamos plantilla del reenviador que normalmente es google
+cat /dev/null > /etc/bind/named.conf.options
+echo "options {
+	directory sus1;
+
+	// If there is a firewall between you and nameservers you want
+	// to talk to, you may need to fix the firewall to allow multiple
+	// ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+	// If your ISP provided one or more IP addresses for stable 
+	// nameservers, you probably want to use them as forwarders.  
+	// Uncomment the following block, and insert the addresses replacing 
+	// the all-0's placeholder.
+
+	forwarders {
+		8.8.8.8;
+	 };
+
+	//========================================================================
+	// If BIND logs error messages about the root key being expired,
+	// you will need to update your keys.  See https://www.isc.org/bind-keys
+	//========================================================================
+	dnssec-validation auto;
+
+	auth-nxdomain no;    # conform to RFC1035
+	listen-on-v6 { any; };
+};" >> /etc/bind/named.conf.options
+
+sed -i 's|sus1|"'/var/cache/bind'"|g' /etc/bind/named.conf.options
+
+#Creacion de la zona directa
+echo -n "Se va a crear la zona directa,¿que nombre le quieres asignar? "
+read nombrezd
+echo -n "Indica el nombre del archivo de configuracion (se añade db. por defecto)"
+read  nombreconfzona
+zonename=db.$nombreconfzona
+#plantilla de la 1º zona directa
+cat /dev/null > /etc/bind/named.conf.local
+echo "zone nombrezd {
+        type master;
+        file zonename;
+};" >> /etc/bind/named.conf.local 
+#sustitucion de datos
+sed -i 's|nombrezd|"'$nombrezd'"|g' /etc/bind/named.conf.local
+sed -i 's|zonename|"'/etc/bind/$zonename'"|g' /etc/bind/named.conf.local
+#creacion archivo configuracion de zona
+if [ -f /etc/bind/$zonename ]
+	then
+cat /dev/null > /etc/bind/$zonename
+	else
+touch /etc/bind/$zonename
+fi
+#introducion de la plantilla de zona
+echo " 
+sus	86400
+@	IN	SOA	nombreserver. root.domain. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			  86400 )	; Negative Cache TTL
+;
+
+; Registros para servidores DNS de mi dominio
+@	IN	NS	nombreserver." >> /etc/bind/$zonename
+#añadir datos
+echo se ha creado el archivo $zonename en /etc/bind/
+sleep 3
+clear
+cat /etc/hosts
+echo -n "introduce el nombre completo de tu servidor: "
+read nombreserver
+echo -n "introduce el nombre de tu dominio: "
+read domain
+#sustitucion de datos
+sed -i 's|sus|$TTL|g' /etc/bind/$zonename
+sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$zonename
+sed -i 's|domain|'$domain'|g' /etc/bind/$zonename
+#introdución de entradas durante instalacion
+echo "Aqui solo puedes añadir un registro que asocie nombre con IP para añadir una entrada de otro tipo hazlo desde el Menu DNS"
+echo "Se recomienda añadir el servidor actual"
+sleep 1
+echo "¿Deseas añadir algun registro?(s/n): "
+read ponerentrada
+while [ $ponerentrada = s ]
+do
+echo -n "introduce nombre de la maquina:  "
+read nombreentrada
+echo -n "introduce IP de la maquina: "
+read ipmaquina
+echo $nombremaquina	IN	A	$ipmaquina >> /etc/bind/$zonename
+echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+read ponerentrada
+done
+
+## ZONA INVERSA ##
+
+echo "entrada/s añadidas, se va a proceder a crear la zona inversa"
+sleep 3 
+clear
+echo -n "Introduce la IP de tu servidor a la inversa, ej:para la 192.168.10.1 seria 10.168.192 "
+read ipinversa
+echo -n "introduce el nombre para la zona inversa(db. se añade automaticamente): "
+read nameinversa
+invname=db.$nameinversa
+#platilla zona inversa
+touch /etc/bind/$invname
+echo "zone ipinversa {
+	type master;
+	file nombreinv;
+};" >> /etc/bind/named.conf.local
+#sustitucion de datos
+sed -i 's|ipinversa|"'$ipinversa.in-addr.arpa'"|g' /etc/bind/named.conf.local
+sed -i 's|nombreinv|"'/etc/bind/$invname'"|g' /etc/bind/named.conf.local
+#configuracion del archivo de zona inversa
+#cargar platilla zona inversa
+if [ -f /etc/bind/$invname ]
+        then
+cat /dev/null > /etc/bind/$invname
+        else
+touch /etc/bind/$invname
+fi
+
+echo "; configuración de la zona inversa.
+
+sus	86400
+@	IN	SOA	nombreserver. root.domain.edu. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			  86400 )	; Negative Cache TTL
+;
+
+; Registros para servidores DNS de mi dominio
+@	IN	NS	nombreserver." >> /etc/bind/$invname
+#sustitucion de datos de la zona inversa
+sed -i 's|sus|$TTL|g' /etc/bind/$invname
+sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$invname
+sed -i 's|domain|'$domain'|g' /etc/bind/$invname
+#introdución de entradas durante instalacion
+echo "Aqui solo puedes añadir un registro que asocie una IP con un nombre para añadir una entrada de otro tipo hazlo desde el Menu DNS"
+echo "Se recomienda añadir los mismos que añasite en la directa"
+sleep 1
+echo "¿Deseas añadir algun registro?(s/n): "
+read ponerentradainv
+while [ $ponerentradainv = s ]
+do
+echo -n "introduce nombre de la maquina:  "
+read nombreentradainv
+echo -n "introduce el ultimo numero de la IP ej:192.168.10.1 seria 1 "
+read ipmaquinainv
+echo $ipmaquinainv	IN	PTR	$nombreentradainv. >> /etc/bind/$invname
+echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+read ponerentradainv
+done
+service bind9 restart
+echo "Configuración del DNS completada"
+
+
+#Registros de asociación de nombres a IP
+#1	IN	PTR	serverACM.dominioacm.edu.
+#añadir entrada A zona directa
+#serverACM.dominioacm.edu.	IN	A	192.168.20.1
+
+
+
+esac;;
+3)echo cargando;
 	clear;
 
 echo "   _____                 _     _            ";
@@ -224,7 +412,7 @@ fi;;
 				echo $newhostname >> /etc/hostname;;
 				3)sudo sh menu.sh;;
 				esac
-;;
+					;;
 #fin del menu principal
 esac
 #fin del menu principal
