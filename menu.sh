@@ -144,7 +144,8 @@ echo " |_____/|_| \_|_____/ ";
 echo "                      ";
 echo "                      ";
 echo 1.Añadir zona
-echo 2.Instalación
+echo 2.Añadir registro a zona
+echo 3.Instalación
 echo -n "Elige una opcion: "
 read opciondns
 case $opciondns in 
@@ -189,7 +190,7 @@ fi
 #introducion de la plantilla de zona
 echo " 
 sus	86400
-@	IN	SOA	nombreserver. root.domain. (
+@	IN	SOA	nombresubd. root.domain. (
 			      1		; Serial
 			 604800		; Refresh
 			  86400		; Retry
@@ -209,6 +210,16 @@ read nombreserver
 echo -n "introduce el nombre de tu dominio: "
 read domain
 #sustitucion de datos
+echo -n "¿La zona es un subdominio?(s/n): "
+read subdom
+	if [ $subdom = s ]
+		then
+	echo -n "Introduce nombre de subdominio: "
+	read subdomname
+	sed -i 's|nombresubd|'$subdomname.$domain'|g' /etc/bind/$dbnew
+		else
+sed -i 's|nombresubd|'$nombreserver'|g' /etc/bind/$dbnew
+fi
 sed -i 's|sus|$TTL|g' /etc/bind/$dbnew
 sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$dbnew
 sed -i 's|domain|'$domain'|g' /etc/bind/$dbnew
@@ -254,7 +265,7 @@ fi
 echo "; configuración de la zona inversa.
 
 sus     86400
-@       IN      SOA     nombreserver. root.domain.edu. (
+@       IN      SOA     nombresubd. root.domain. (
                               1         ; Serial
                          604800         ; Refresh
                           86400         ; Retry
@@ -264,6 +275,15 @@ sus     86400
 
 ; Registros para servidores DNS de mi dominio
 @       IN      NS      nombreserver." >> /etc/bind/$newdbinv
+
+## si es subdominio
+if [ $subdom = s ]
+                then
+sed -i 's|nombresubd|'$subdomname.$domain'|g' /etc/bind/$newdbinv
+                else
+sed -i 's|nombresubd|'$nombreserver'|g' /etc/bind/$newdbinv
+fi
+
 #sustitucion de datos de la zona inversa
 sed -i 's|sus|$TTL|g' /etc/bind/$newdbinv
 sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$newdbinv
@@ -313,7 +333,7 @@ fi
 echo "; configuración de la zona inversa.
 
 sus	86400
-@	IN	SOA	nombreserver. root.domain.edu. (
+@	IN	SOA	nombreserver. root.domain. (
 			      1		; Serial
 			 604800		; Refresh
 			  86400		; Retry
@@ -331,6 +351,17 @@ read nombreserver
 echo -n "introduce el nombre de tu dominio: "
 read domain
 
+echo -n "¿La zona es un subdominio?(s/n): "
+read subdom
+        if [ $subdom = s ]
+                then
+        echo -n "Introduce nombre de subdominio: "
+        read subdomname
+        sed -i 's|nombresubd|'$subdomname.$domain'|g' /etc/bind/$invname
+                else
+sed -i 's|nombresubd|'$nombreserver'|g' /etc/bind/$invname
+fi
+
 #sustitucion de datos de la zona inversa
 sed -i 's|sus|$TTL|g' /etc/bind/$invname
 sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$invname
@@ -340,7 +371,126 @@ fi
 
 ;;
 ###################################################################################################################
-		2)echo Se va a empezar a instalar y configurar el servidor DNS
+	2)clear 
+	echo Tipos de registro.
+	echo " "
+	echo "1. Registro A (especifica una IPv4 para un nombre)"
+	echo "2. Registro AAA (especifica una IPv6 para un nombre)"
+	echo "3. Registro CNAME (crea un alias para un registro A o AAA)"
+	echo "4. Registro MX (indica los servidores encargados para la entrega de correo)"
+	echo "5. Registro PTR asocia IP a nombres (solo sirve para zona inversa)"
+	echo -n Selecciona una opcion
+	read opcSOA
+case $opcSOA in
+		1)clear 
+			echo Has seleccionado registro A.
+			echo Selecciona una zona
+			ls /etc/bind/db.*	
+			sleep 2
+			echo -n "Escribe el nombre completo: " 
+			read zonaSOA
+			echo -n "¿Quieres añadir una entrada A en $zonaSOA? (s/n) "
+			read ponerA
+			while [ $ponerA = s ]
+				do
+			echo -n "introduce nombre de la maquina:  "
+			read nombreA
+			echo -n "introduce la IP "
+			read PCIP
+			echo $nombreA      IN      A     $PCIP >> /etc/bind/$zonaSOA
+			echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+			read ponerA
+			done
+		;;
+	        2)clear 
+		        echo Has seleccionado registro AAA.
+		        echo Selecciona una zona
+		        ls /etc/bind/db.*
+		        sleep 2
+		        echo -n "Escribe el nombre completo: " 
+		        read zonaSOA
+		        echo -n "¿Quieres añadir una entrada AAA en $zonaSOA? (s/n) "
+		        read ponerAAA
+		        while [ $ponerAAA = s ]
+		                do
+			echo -n "introduce nombre de la maquina:  "
+			read nombreAAA
+			echo -n "introduce la IP "
+			read PCIP
+			echo $nombreAAA      IN     AAA     $PCIP >> /etc/bind/$zonaSOA
+			echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+			read ponerAAA
+			done
+		;;
+
+3)clear 
+		        echo Has seleccionado registro CNAME.
+		        echo Selecciona una zona
+		        ls /etc/bind/db.*
+		        sleep 2
+		        echo -n "Escribe el nombre completo: " 
+		        read zonaSOA
+		        echo -n "¿Quieres añadir una entrada CNAME en $zonaSOA? (s/n) "
+		        read ponerCNAME
+		        while [ $ponerCNAME = s ]
+		                do
+			cat /etc/bind/$zonaSOA
+			sleep 1
+			echo -n "introduce alias de la maquina:  "
+			read cname
+			echo -n "introduce nombre verdadero"
+			read realname
+			echo $cname      IN      CNAME     $realname >> /etc/bind/$zonaSOA
+			echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+			read ponerCNAME
+			done
+		;;
+
+4)clear 
+        		echo Has seleccionado registro MX.
+		        echo Selecciona una zona
+		        ls /etc/bind/db.*
+		        sleep 2
+		        echo -n "Escribe el nombre completo: " 
+		        read zonaSOA
+		        echo -n "¿Quieres añadir una entrada A en $zonaSOA? (s/n) "
+		        read ponerMX
+		        while [ $ponerMX = s ]
+		                do
+			echo -n "introduce nombre del dominio:  "
+			read nombreMX
+			echo -n "introduce el FQDN del servidor "
+			read fqdn
+			echo $nombreMX      IN      A     $fqdn >> /etc/bind/$zonaSOA
+			echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+			read ponerMX
+			done
+;;
+5) clear
+			echo Has seleccionado registro PTR
+			echo selecciona una zona inversa
+			ls /etc/bind/db.*
+			sleep2
+			echo -n "Escribe el nombre completo: "
+			read zonaSOA
+			echo -n "¿Quieres añadir una entrada PTR en $zonaSOA? (s/n) "
+			read ponerPTR
+			while [ $ponerPTR = s ]
+			do
+			echo -n "introduce nombre de la maquina:  "
+			read nombreentradainv
+			echo -n "introduce el ultimo numero de la IP ej:192.168.10.1 seria 1 "
+			read ipmaquinainv
+			echo $ipmaquinainv      IN      PTR     $nombreentradainv. >> /etc/bind/$zonaSOA
+			echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
+			read ponerPTR
+			done
+;;
+esac 
+;;
+
+###################################################################################################################
+	3)echo Se va a empezar a instalar y configurar el servidor DNS
 		echo ASEGURATE DE TENER CONEXION A INTERNET
 		sleep 3
 		apt-get install bind9
@@ -470,7 +620,7 @@ fi
 echo "; configuración de la zona inversa.
 
 sus	86400
-@	IN	SOA	nombreserver. root.domain.edu. (
+@	IN	SOA	nombreserver. root.domain. (
 			      1		; Serial
 			 604800		; Refresh
 			  86400		; Retry
