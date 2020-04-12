@@ -148,7 +148,198 @@ echo 2.Instalación
 echo -n "Elige una opcion: "
 read opciondns
 case $opciondns in 
-		1) echo has elegido la opcion 1;;
+		1)clear
+		 echo se va a proceder a crear una zona nueva.
+#introducion de datos de la zona
+		echo -n "¿Quieres crear una zona directa o inversa? (d/i): "
+		read diroinv
+			if [ $diroinv = d ]
+			then
+		echo Has seleccionado crear una zona directa
+		sleep 2
+		echo -n "Introduce el nombre de la zona: "
+		read newnamezone
+		echo -n "¿Va a ser un servidor primario o secundario?(p/s): "
+		read priosec
+		if [ $priosec = p ]
+		then
+		tipodns=master
+			else
+		tipodns=slave
+		fi
+	echo -n "Introduce el nombre del fichero de configuración (se le añade db. delante por defecto): "
+		read newnameconf
+		dbnew=db.$newnameconf
+#plantilla de la zona directa
+echo "zone newnamezone {
+        type priosec;
+        file newnameconf;
+};" >> /etc/bind/named.conf.local 
+#sustitucion de datos
+sed -i 's|newnamezone|"'$newnamezone'"|g' /etc/bind/named.conf.local
+sed -i 's|newnameconf|"'/etc/bind/$dbnew'"|g' /etc/bind/named.conf.local
+sed -i 's|priosec|'$tipodns'|g' /etc/bind/named.conf.local
+#creacion archivo configuracion de zona
+if [ -f /etc/bind/$dbnew ]
+	then
+cat /dev/null > /etc/bind/$dbnew
+	else
+touch /etc/bind/$dbnew
+fi
+#introducion de la plantilla de zona
+echo " 
+sus	86400
+@	IN	SOA	nombreserver. root.domain. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			  86400 )	; Negative Cache TTL
+;
+
+; Registros para servidores DNS de mi dominio
+@	IN	NS	nombreserver." >> /etc/bind/$dbnew
+#añadir datos
+echo se ha creado el archivo $dbnew en /etc/bind/
+sleep 3
+clear
+cat /etc/hosts
+echo -n "introduce el nombre completo de tu servidor: "
+read nombreserver
+echo -n "introduce el nombre de tu dominio: "
+read domain
+#sustitucion de datos
+sed -i 's|sus|$TTL|g' /etc/bind/$dbnew
+sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$dbnew
+sed -i 's|domain|'$domain'|g' /etc/bind/$dbnew
+####################
+echo "Se ha añadido el servidor a la zona directa, para añadir más usa la opción de añadir del menu DNS"
+####################
+#opcion crear zona inversa al hacer la directa
+	echo -n "¿Quieres crear la zona inversa de esta zona?(s/n): "
+	read crearinv
+		if [ $crearinv = s ]
+			then
+		echo se va a crear la zona inversa
+		echo -n "Introduce la IP invertida ejem(192.168.10.1 seria 10.168.192): "
+		read ipinvz
+		invadd=$ipinvz.in-addr.arpa
+		echo -n "Introduce nombre del archivo de configuración (se añade db. delante por defecto): "
+		read newnameinvconf
+		newdbinv=db.$newnameinvconf
+		if [ -f /etc/bind/$newdbinv ]
+        		then
+		cat /dev/null > /etc/bind/$newdbinv
+        		else
+		touch /etc/bind/$newdbinv
+		fi
+
+echo "zone invadd {
+        type priosec;
+        file newinvzonename;
+};" >> /etc/bind/named.conf.local
+	#sustitucion de datos
+sed -i 's|invadd|"'$invadd'"|g' /etc/bind/named.conf.local
+sed -i 's|priosec|'$tipodns'|g' /etc/bind/named.conf.local
+sed -i 's|newinvzonename|"'/etc/bind/$newdbinv'"|g' /etc/bind/named.conf.local
+#configuracion del archivo de zona inversa
+#cargar platilla zona inversa
+if [ -f /etc/bind/$newdbinv ]
+        then
+cat /dev/null > /etc/bind/$newdbinv
+        else
+touch /etc/bind/$newdbinv
+fi
+
+echo "; configuración de la zona inversa.
+
+sus     86400
+@       IN      SOA     nombreserver. root.domain.edu. (
+                              1         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                          86400 )       ; Negative Cache TTL
+;
+
+; Registros para servidores DNS de mi dominio
+@       IN      NS      nombreserver." >> /etc/bind/$newdbinv
+#sustitucion de datos de la zona inversa
+sed -i 's|sus|$TTL|g' /etc/bind/$newdbinv
+sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$newdbinv
+sed -i 's|domain|'$domain'|g' /etc/bind/$newdbinv
+
+echo Zonas creadas
+else 
+echo zona directa creada
+fi
+############################################ else si no se elige directa desde el principio
+else
+############################################
+clear 
+echo se va a proceder a crear una zona inversa
+clear
+echo -n "¿Va a ser un servidor primario o secundario?(p/s): "
+read priosec
+if [ $priosec = p ]
+                then
+                tipodns=master
+                        else
+                tipodns=slave
+                fi
+echo -n "Introduce la IP de tu servidor a la inversa, ej:para la 192.168.10.1 seria 10.168.192 "
+read ipinversa
+echo -n "introduce el nombre para la zona inversa(db. se añade automaticamente): "
+read nameinversa
+invname=db.$nameinversa
+#platilla zona inversa
+echo "zone ipinversa {
+	type tipodns;
+	file invname;
+};" >> /etc/bind/named.conf.local
+#sustitucion de datos
+sed -i 's|ipinversa|"'$ipinversa.in-addr.arpa'"|g' /etc/bind/named.conf.local
+sed -i 's|tipodns|'$tipodns'|g' /etc/bind/named.conf.local
+sed -i 's|invname|"'/etc/bind/$invname'"|g' /etc/bind/named.conf.local
+#configuracion del archivo de zona inversa
+#cargar platilla zona inversa
+if [ -f /etc/bind/$invname ]
+        then
+cat /dev/null > /etc/bind/$invname
+        else
+touch /etc/bind/$invname
+fi
+
+echo "; configuración de la zona inversa.
+
+sus	86400
+@	IN	SOA	nombreserver. root.domain.edu. (
+			      1		; Serial
+			 604800		; Refresh
+			  86400		; Retry
+			2419200		; Expire
+			  86400 )	; Negative Cache TTL
+;
+
+; Registros para servidores DNS de mi dominio
+@	IN	NS	nombreserver." >> /etc/bind/$invname
+## pedir datos server
+clear
+cat /etc/hosts
+echo -n "introduce el nombre completo de tu servidor: "
+read nombreserver
+echo -n "introduce el nombre de tu dominio: "
+read domain
+
+#sustitucion de datos de la zona inversa
+sed -i 's|sus|$TTL|g' /etc/bind/$invname
+sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$invname
+sed -i 's|domain|'$domain'|g' /etc/bind/$invname
+echo zona inversa creada
+fi
+
+;;
+###################################################################################################################
 		2)echo Se va a empezar a instalar y configurar el servidor DNS
 		echo ASEGURATE DE TENER CONEXION A INTERNET
 		sleep 3
@@ -412,7 +603,7 @@ fi;;
 				echo $newhostname >> /etc/hostname;;
 				3)sudo sh menu.sh;;
 				esac
-					;;
+;;
 #fin del menu principal
 esac
 #fin del menu principal
