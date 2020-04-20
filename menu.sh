@@ -13,8 +13,9 @@ echo "Por Antonio Cano Madrigal";
 echo " ";
 echo 1.DHCP.
 echo 2.DNS
-echo 3.Opciones del servidor.
-echo 4.Salir.
+echo 3.SAMBA
+echo 4.Opciones del servidor.
+echo 5.salir
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
@@ -659,10 +660,77 @@ echo "Configuración del DNS completada"
 #añadir entrada A zona directa
 #serverACM.dominioacm.edu.	IN	A	192.168.20.1
 
+;;
+esac
+;;
+##############################################################################################
+3)echo cargando; 
+clear;
+echo "                      _           ";
+echo "                     | |          ";
+echo "  ___  __ _ _ __ ___ | |__   __ _ ";
+echo " / __|/ _\` | '_ \` _ \| '_ \ / _\` |";
+echo " \__ \ (_| | | | | | | |_) | (_| |";
+echo " |___/\__,_|_| |_| |_|_.__/ \__,_|";
+echo "                                  ";
+echo "                                  ";
+echo 1. Instalacion
+echo 2. salir
+echo -n "selecciona una opcion: "
+read optsamba
+case  $optsamba in
+	1)echo "Se va a proceder a instalar samba"
+	apt-get -y install samba
+	apt-get -y install samba-common-tools
+	apt-get -y install samba-client
+	#habilitamos el inicio de samba al inicio del sistema
+	systemctl start smb
+	systemctl enable smb
+	echo samba instalado
+	sleep 1
+	clear
+	#Pregunta si se quiere crear un recurso
+	echo -n "¿Quieres compartir un recurso ahora? (y/n)"
+	read smbcompnow
+	if [ $smbcompnow = y ]
+	then
+	#pide datos del recurso
+	echo -n "introduce nombre del recurso: "
+	read smbname
+	echo -n "introduce la ruta absoluta del directorio a compartir  "
+	read smbpath
+	echo -n "¿Va a ser publica? (yes/no): "
+	read smbpublic
+	echo -n "¿Permisos de escritura? (yes/no): "
+	read smbwrite
+		else
+		exit
+	fi
+	#plantilla recurso
+echo "
+[nombresamba]
 
+path=rutaabs
 
-esac;;
-3)echo cargando;
+public=publica
+
+writable=escritura
+
+guest ok=inv " >> /etc/samba/smb.conf
+#sustitucion de datos
+sed -i 's|nombresamba|'$smbname'|g' /etc/samba/smb.conf
+sed -i 's|rutaabs|'$smbpath'|g' /etc/samba/smb.conf
+sed -i 's|publica|'$smbpublic'|g' /etc/samba/smb.conf
+sed -i 's|escritura|'$smbwrite'|g' /etc/samba/smb.conf
+sed -i 's|inv|'$smbpublic'|g' /etc/samba/smb.conf
+service smbd restart
+;;
+#fin samba
+2) exit;;
+esac
+;;
+##############################################################################################
+4)echo cargando;
 	clear;
 
 echo "   _____                 _     _            ";
