@@ -66,12 +66,14 @@ hardware ethernet $machost;
 				## Aqui se extraen las variables para cambiar en el archivo de configuración
 				echo -n "introduce el nombre de dominio:"
 				read dominiodhcp
-				echo -n "introduce el nombre de dominio del servidor:"
+				echo -n "introduce la ip del servidor DNS:"
 				read servidordhcp
 				echo -n "introduce direccion de red:"
 				read reddhcp
 				echo -n "introduce mascara de red:"
 				read maskdhcp
+				echo -n "Introduce la direccion de gateway: "
+				read gatewaydhcp
 				echo -n "introduce la direccion de broadcast:"
 				read broadcastdhcp
 				echo -n "introduce primera direccion usable por el dhcp:"
@@ -89,7 +91,7 @@ ddns-update-style none;
 
 # Nombre de dominio y del servidor
 option domain-name dominiodhcp;
-option domain-name-servers serverdomain;
+option domain-name-servers serverdomain, 8.8.8.8;
 
 
 # Tiempos de concesion por defecto 1 dia, maximo 2 dias
@@ -107,6 +109,7 @@ log-facility local7;
 subnet red1 netmask mascara {
   range rango1 rango2;
   option broadcast-address difusion;
+  option routers pedhcp
 }
 
 
@@ -119,6 +122,7 @@ sed -i 's|mascara|'$maskdhcp'|g' /etc/dhcp/dhcpd.conf
 sed -i 's|rango1|'$range1dhcp'|g' /etc/dhcp/dhcpd.conf
 sed -i 's|rango2|'$range2dhcp'|g' /etc/dhcp/dhcpd.conf
 sed -i 's|difusion|'$broadcastdhcp'|g' /etc/dhcp/dhcpd.conf
+sed -i 's|pedhcp|'$gatewaydhcp'|g' /etc/dhcp/dhcpd.conf
 sudo service isc-dhcp-server restart
 echo DHCP configurado!!;;
 				4) echo -n Se va a reiniciar el servidor, ¿quieres continuar? y/n.  
@@ -675,7 +679,8 @@ echo " |___/\__,_|_| |_| |_|_.__/ \__,_|";
 echo "                                  ";
 echo "                                  ";
 echo 1. Instalacion
-echo 2. salir
+echo 2. Usuarios samba
+echo 3. Añadir recurso a samba.
 echo -n "selecciona una opcion: "
 read optsamba
 case  $optsamba in
@@ -725,8 +730,63 @@ sed -i 's|escritura|'$smbwrite'|g' /etc/samba/smb.conf
 sed -i 's|inv|'$smbpublic'|g' /etc/samba/smb.conf
 service smbd restart
 ;;
-#fin samba
-2) exit;;
+#fin instalacion samba
+2) clear
+ echo "¿Quieres añadir o eliminar un usuario? (a/q) "
+read smbusuaddel
+if [ $smbusuaddel = a ]
+	then
+echo  se va a proceder a crear un usuario samba.
+echo -n "¿Añadir un usuario nuevo o usar uno existente? new/exist "
+read createususamba
+	if [ $createususamba = exist ]
+	then
+	echo "Introduce el nombre del usuario existente "
+	read existusu
+	sudo smbpasswd -a $existusu
+		else
+	echo "Introduce el nombre del nuevo usuario "
+	read newusu
+	sudo adduser $newusu
+	sudo smbpasswd -a $newusu
+	fi
+	else 
+echo Se va a proceder a eliminar un usuario samba.
+echo -n "¿Que usuario quieres eliminar? "
+read smbusudel
+sudo smbpasswd -x $smbusudel
+fi
+;;
+3) clear
+echo se va a compartir un recurso.
+echo -n "introduce nombre del recurso: "
+        read smbname
+        echo -n "introduce la ruta absoluta del directorio a compartir  "
+        read smbpath
+        echo -n "¿Va a ser publica? (yes/no): "
+        read smbpublic
+        echo -n "¿Permisos de escritura? (yes/no): "
+        read smbwrite
+#plantilla recurso
+echo "
+[nombresamba]
+
+path=rutaabs
+
+public=publica
+
+writable=escritura
+
+guest ok=inv " >> /etc/samba/smb.conf
+#sustitucion de datos
+sed -i 's|nombresamba|'$smbname'|g' /etc/samba/smb.conf
+sed -i 's|rutaabs|'$smbpath'|g' /etc/samba/smb.conf
+sed -i 's|publica|'$smbpublic'|g' /etc/samba/smb.conf
+sed -i 's|escritura|'$smbwrite'|g' /etc/samba/smb.conf
+sed -i 's|inv|'$smbpublic'|g' /etc/samba/smb.conf
+service smbd restart
+;;
+
 esac
 ;;
 ##############################################################################################
@@ -743,7 +803,8 @@ echo "                                            ";
 echo "                                            ";
 	echo 1. Modificar /etc/hosts;
 	echo 2. Modificar hostname;
-	echo 3. Menu principal.;
+	echo 3. Usar servidor como enrutador.
+	echo 4. Menu principal.;
 	echo -n "elige una opcion: " ;
 	read submenuopciones;
 			# submenu opciones
@@ -819,7 +880,37 @@ fi;;
 				read newhostname
 				 cat /dev/null > /etc/hostname
 				echo $newhostname >> /etc/hostname;;
-				3)sudo sh menu.sh;;
+				3) clear
+				echo vas a proceder a usar este servidor como enrutador para los clientes que lo tengan como puerta de enlace.
+				echo "Esta instalado iptables-persistent en esta maquina (s/n): "
+				read iptabresp
+				sleep 1
+				if [ $iptabresp = n ]
+				then
+				echo Se va a proceder a la instalación
+				sleep 2
+				apt-get update
+				apt-get install -y iptables-persistent
+				service iptables-persistent start
+				else
+				clear
+  				sysctl -w net.ipv4.ip_forward=1
+				sed -i '/net.ipv4.ip_forward/s/^#//g' /etc/sysctl.conf
+				sysctl -p
+				iptables -A FORWARD -j ACCEPT
+				clear
+				echo "introduce direccion de red de escucha y mascara (192.168.33.0/24): "
+				read iptred
+				ip a
+				sleep 1
+				echo "Introduce la interfaz con salida a internet: "
+				read iptint
+				iptables -t nat -A POSTROUTING -s $iptred -o $iptint -j MASQUERADE
+				iptables-save > /etc/iptables/rules.v4
+				echo "Configuración realizada!"
+				fi
+				;;
+				4)sudo sh menu.sh;;
 				esac
 ;;
 #fin del menu principal
