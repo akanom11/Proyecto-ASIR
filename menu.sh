@@ -804,7 +804,9 @@ echo "                                            ";
 	echo 1. Modificar /etc/hosts;
 	echo 2. Modificar hostname;
 	echo 3. Usar servidor como enrutador.
-	echo 4. Menu principal.;
+	echo 4. Copias de seguridad.
+	echo 5. Conectividad.
+	echo 6. Menu principal.;
 	echo -n "elige una opcion: " ;
 	read submenuopciones;
 			# submenu opciones
@@ -910,7 +912,179 @@ fi;;
 				echo "Configuración realizada!"
 				fi
 				;;
-				4)sudo sh menu.sh;;
+				4) clear
+				echo "¿Que deseas hacer?"
+				echo 1. Copiar.
+				echo 2. Recuperar.
+				echo 3. Programar copia.
+				echo "Elige una opcion: "
+				read backupopt
+					case $backupopt in
+						1) clear
+						echo -n "¿Quieres hacer una copia completa o intermental? (c/i): "
+						read backupcominc
+							if [ $backupcominc = c ]
+							then
+								echo se va a hacer una copia completa.
+								DATE=$(date +%Y-%m-%d-%H%M%S)
+								echo "Introduce ruta completa del destino (sin / al final): "
+								read DESTINOFBK
+								echo "Introduce nombre de la copia(Se le añade por defecto la fecha): "
+								read NOMBREFBK
+								echo "Introduce ruta completa de/los achivos que quieres hacer la copia (separados por un espacio): "
+								read SOURCEFBK
+								tar -cvzpf $DESTINOFBK/$NOMBREFBK-$DATE.tar.gz $SOURCEFBK
+								echo se ha creado la copia en $DESTINOFBK
+									else
+								echo se va a hacer una copia incremental.
+								DATE=$(date +%Y-%m-%d)
+								echo "Introduce ruta completa del destino (sin / al final): "
+                                                                read DESTINOIBK
+                                                                echo "Introduce nombre de la copia(Se le añade por defecto la fecha): "
+                                                                read NOMBREIBK
+                                                               	ls $DESTINOIBK
+								 echo "Introduce ruta completa de/los achivos que quieres hacer la copia (separados por un espacio): "
+                                                                read SOURCEIBK
+                                                                tar -cvzpf $DESTINOIBK/$NOMBREIBK-$DATE.tar.gz  -g $DESTINOIBK/$NOMBREIBK.snap $SOURCEIBK
+                                                                echo se ha creado la copia en $DESTINOIBK
+							fi
+							;;
+						2)clear
+						echo "Introduce la ruta del archivo que quieres extraer: "
+						read EXTSOURCE
+						echo " "
+						echo ""
+						ls $EXTSOURCE
+						sleep 1
+						echo ""
+						echo "Introduce el archivo comprimido para extraer: "
+						read DESTINOTAR
+						echo ""
+						echo "Introduce la ruta de destino para extraer: "
+						read DESTINOEXT
+						tar -xvzf $EXTSOURCE/$DESTINOTAR -C $DESTINOEXT
+						;;
+						3)clear
+						echo Se va a programar una copia de seguridad.
+						sleep 1
+						
+					esac
+;;
+				5)clear
+				echo "selecciona una opción"
+				echo 1."VPN"
+				echo 2."Cambiar puerto SSH"
+				read opcionconect
+				case $opcionconect in
+					1)echo "La configuración de usuario y contraseña se hace desde /etc/ppp/chap-secrets, si ya esta instalado cancela"
+						sleep 3						
+						echo "se va a proceder a instalar el servidor."
+					sudo apt-get install -y ppdpd
+					clear
+					echo "Se va a proceder a configurar el servicio PPTP"
+					echo "Introduce tu direccion IP"
+					read ippptp
+					echo "Introduce el rango de direcciones para la VPN (Formato: 192.168.0.10-20)"
+					read pptprange
+					sudo cat /dev/null > /etc/pptpd.conf
+					echo "
+					###############################################################################
+# $Id$
+#
+# Sample Poptop configuration file /etc/pptpd.conf
+#
+# Changes are effective when pptpd is restarted.
+###############################################################################
+
+
+option /etc/ppp/pptpd-options
+
+
+logwtmp
+
+localip $ippptp
+remoteip $pptprange
+# or
+#localip 192.168.0.234-238,192.168.0.245
+#remoteip 192.168.1.234-238,192.168.1.245 
+" >> /etc/pptpd.conf
+				echo "Introduce nombre del servidor PPTP"
+				read namepptp
+				echo "Introduce la direccion DNS principal"
+				read dnspptp1
+				echo "Introduce la direccion DNS alternativa"
+				read dnspptp2
+				sudo cat /dev/null > /etc/ppp/pptpd-options
+				echo "
+name $namepptp
+
+# domain mydomain.net
+
+
+
+
+
+refuse-pap
+refuse-chap
+refuse-mschap
+require-mschap-v2
+require-mppe-128
+
+
+
+
+
+
+ms-dns $dnspptp1
+ms-dns $dnspptp2
+
+
+#ms-wins 10.0.0.3
+#ms-wins 10.0.0.4
+
+
+proxyarp
+
+
+nodefaultroute
+
+
+
+lock
+
+
+nobsdcomp
+
+
+novj
+novjccomp
+
+
+nologfd
+" >> /etc/ppp/pptpd-options
+				sed -i 's|nombresrv|'$namepptp'|g' /etc/ppp/pptpd-options
+				sed -i 's|dnspptp1|'$dnspptp1'|g' /etc/ppp/pptpd-options
+				sed -i 's|dnspptp2|'$dnspptp2'|g' /etc/ppp/pptpd-options
+				echo "Introduce nombre de usuario para VPN"
+				read userpptp
+				echo "Introduce contraseña para VPN"
+				read passpptp
+				sudo cat /dev/null > /etc/ppp/chap-secrets
+				echo " 
+				# Secrets for authentication using CHAP
+# client        server  secret                  IP addresses
+nombre	server	pass	*
+" >> /etc/ppp/chap-secrets
+				sed -i 's|nombre|'$userpptp'|g' /etc/ppp/chap-secrets
+				sed -i 's|server|'$namepptp'|g' /etc/ppp/chap-secrets
+				sed -i 's|pass|'$passpptp'|g' /etc/ppp/chap-secrets
+clear
+				echo "PPTP instalado"
+				echo "AVISO:
+				Si deseas que sea accesible desde internet es necesario abrir el puerto 1723 en el router o firewall"			
+				esac
+				;;
+				6)sudo sh menu.sh;;
 				esac
 ;;
 #fin del menu principal
