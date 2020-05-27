@@ -14,8 +14,9 @@ echo " ";
 echo 1.DHCP.
 echo 2.DNS
 echo 3.SAMBA
-echo 4.Opciones del servidor.
-echo 5.salir
+echo 4.Copias de seguridad
+echo 5.Opciones del servidor.
+echo 6.salir
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
@@ -790,7 +791,124 @@ service smbd restart
 esac
 ;;
 ##############################################################################################
-4)echo cargando;
+4) echo cargando
+clear
+echo "  ____             _                ";
+echo " |  _ \           | |               ";
+echo " | |_) | __ _  ___| | ___   _ _ __  ";
+echo " |  _ < / _\` |/ __| |/ / | | | '_ \ ";
+echo " | |_) | (_| | (__|   <| |_| | |_) |";
+echo " |____/ \__,_|\___|_|\_\\__,_| .__/ ";
+echo "                             | |    ";
+echo "                             |_|    ";
+echo ""
+echo ""
+				echo "¿Que deseas hacer?"
+				echo 1. Copiar.
+				echo 2. Recuperar.
+				echo 3. Programar copia.
+				echo "Elige una opcion: "
+				read backupopt
+					case $backupopt in
+						1) clear
+						echo -n "¿Quieres hacer una copia completa o intermental? (c/i): "
+						read backupcominc
+							if [ $backupcominc = c ]
+							then
+								echo se va a hacer una copia completa.
+								DATE=$(date +%Y-%m-%d-%H%M%S)
+								echo "Introduce ruta completa del destino (sin / al final): "
+								read DESTINOFBK
+								echo "Introduce nombre de la copia(Se le añade por defecto la fecha): "
+								read NOMBREFBK
+								echo "Introduce ruta completa de/los achivos que quieres hacer la copia (separados por un espacio): "
+								read SOURCEFBK
+								tar -cvzpf $DESTINOFBK/$NOMBREFBK-$DATE.tar.gz $SOURCEFBK
+								echo se ha creado la copia en $DESTINOFBK
+									else
+								echo se va a hacer una copia incremental.
+								DATE=$(date +%Y-%m-%d)
+								echo "Introduce ruta completa del destino (sin / al final): "
+                                                                read DESTINOIBK
+                                                                echo "Introduce nombre de la copia(Se le añade por defecto la fecha): "
+                                                                read NOMBREIBK
+                                                               	ls $DESTINOIBK
+								 echo "Introduce ruta completa de/los achivos que quieres hacer la copia (separados por un espacio): "
+                                                                read SOURCEIBK
+                                                                tar -cvzpf $DESTINOIBK/$NOMBREIBK-$DATE.tar.gz  -g $DESTINOIBK/$NOMBREIBK.snap $SOURCEIBK
+                                                                echo se ha creado la copia en $DESTINOIBK
+							fi
+							;;
+						2)clear
+							echo "Introduce la ruta del archivo que quieres extraer: "
+							read EXTSOURCE
+							echo " "
+							echo ""
+							ls $EXTSOURCE
+							sleep 1
+							echo ""
+							echo "Introduce el archivo comprimido para extraer: "
+							read DESTINOTAR
+							echo ""
+							echo "Introduce la ruta de destino para extraer: "
+							read DESTINOEXT
+							tar -xvzf $EXTSOURCE/$DESTINOTAR -C $DESTINOEXT
+							;;
+						3)clear
+							echo Se va a programar una copia de seguridad.
+							if [ ! -e /copias ]; then
+								sudo mkdir /copias
+							fi
+							echo "Atención!
+							      Por defecto las copias completas se realizan los domingos a las 23:00 y las incrementales todos los dias a la misma hora.
+							      Eso se puede cambiar en el script que se crea en /copias y la hora en /etc/crontab."
+							sleep 3
+							echo "Introduce la ruta que deseas hacer una copia: "
+							read sourceprog
+							echo "Introduce nombre de la copia"
+							read progname
+							echo "Introduce la ruta donde quieres guardar la copia: "
+							read progdest
+							touch /copias/$progname.sh
+							echo "
+							#!/BIN/BASH
+							#copia completa cada mes, cada semana y incremental cada dia.
+							#calcular  fecha
+
+							diasemana="'`date +%a`'"
+
+							diames="'`date +%d`'"
+
+							diaymes="'`date +%d%b`'"
+
+							######copias######
+
+							# REALIZA COPIA COMPLETA TODOS LOS DIA 1 DE CADA MES #
+
+							if [ "'$diames'" = 01 ]; then
+
+							tar -cf $progdest/$progname-"'$diaymes'".tar $sourceprog
+
+							fi
+
+							## REALIZA LA COPIA DE SEGURIDAD COMPLETA TODOS LOS DOMINGOS.
+
+							if [ "'$diasemana'" == dom ]; then
+
+							fechahoy="'`date +%d-%b`'"
+
+
+							tar -cd $progdest/"'$fechahoy'"-$progname-comp.tar $sourceprog
+							else
+							tar -cvzpf $progdest/$progname-"'$fechahoy'".tar.gz -g $progdest/$progname.snap $progdest
+							fi" >> /copias/$progname.sh
+							sudo sed -i '$i 00 23	* * * root /copias/'$progname'.sh' /etc/crontab
+							echo "Copia programada, para editar o borrar la copia borra el archivo .sh generado en /copias y la entrada en /etc/crontab."
+							;;
+							esac
+;;
+##############################################################################################
+5)echo cargando;
 	clear;
 
 echo "   _____                 _     _            ";
@@ -804,9 +922,8 @@ echo "                                            ";
 	echo 1. Modificar /etc/hosts;
 	echo 2. Modificar hostname;
 	echo 3. Usar servidor como enrutador.
-	echo 4. Copias de seguridad.
-	echo 5. Conectividad.
-	echo 6. Menu principal.;
+	echo 4. Conectividad.
+	echo 5. Menu principal.;
 	echo -n "elige una opcion: " ;
 	read submenuopciones;
 			# submenu opciones
@@ -912,65 +1029,7 @@ fi;;
 				echo "Configuración realizada!"
 				fi
 				;;
-				4) clear
-				echo "¿Que deseas hacer?"
-				echo 1. Copiar.
-				echo 2. Recuperar.
-				echo 3. Programar copia.
-				echo "Elige una opcion: "
-				read backupopt
-					case $backupopt in
-						1) clear
-						echo -n "¿Quieres hacer una copia completa o intermental? (c/i): "
-						read backupcominc
-							if [ $backupcominc = c ]
-							then
-								echo se va a hacer una copia completa.
-								DATE=$(date +%Y-%m-%d-%H%M%S)
-								echo "Introduce ruta completa del destino (sin / al final): "
-								read DESTINOFBK
-								echo "Introduce nombre de la copia(Se le añade por defecto la fecha): "
-								read NOMBREFBK
-								echo "Introduce ruta completa de/los achivos que quieres hacer la copia (separados por un espacio): "
-								read SOURCEFBK
-								tar -cvzpf $DESTINOFBK/$NOMBREFBK-$DATE.tar.gz $SOURCEFBK
-								echo se ha creado la copia en $DESTINOFBK
-									else
-								echo se va a hacer una copia incremental.
-								DATE=$(date +%Y-%m-%d)
-								echo "Introduce ruta completa del destino (sin / al final): "
-                                                                read DESTINOIBK
-                                                                echo "Introduce nombre de la copia(Se le añade por defecto la fecha): "
-                                                                read NOMBREIBK
-                                                               	ls $DESTINOIBK
-								 echo "Introduce ruta completa de/los achivos que quieres hacer la copia (separados por un espacio): "
-                                                                read SOURCEIBK
-                                                                tar -cvzpf $DESTINOIBK/$NOMBREIBK-$DATE.tar.gz  -g $DESTINOIBK/$NOMBREIBK.snap $SOURCEIBK
-                                                                echo se ha creado la copia en $DESTINOIBK
-							fi
-							;;
-						2)clear
-						echo "Introduce la ruta del archivo que quieres extraer: "
-						read EXTSOURCE
-						echo " "
-						echo ""
-						ls $EXTSOURCE
-						sleep 1
-						echo ""
-						echo "Introduce el archivo comprimido para extraer: "
-						read DESTINOTAR
-						echo ""
-						echo "Introduce la ruta de destino para extraer: "
-						read DESTINOEXT
-						tar -xvzf $EXTSOURCE/$DESTINOTAR -C $DESTINOEXT
-						;;
-						3)clear
-						echo Se va a programar una copia de seguridad.
-						sleep 1
-						
-					esac
-;;
-				5)clear
+				4)clear
 				echo "selecciona una opción"
 				echo 1."VPN"
 				echo 2."Cambiar puerto SSH"
@@ -1082,9 +1141,10 @@ clear
 				echo "PPTP instalado"
 				echo "AVISO:
 				Si deseas que sea accesible desde internet es necesario abrir el puerto 1723 en el router o firewall"			
+				sleep 3				
 				esac
 				;;
-				6)sudo sh menu.sh;;
+				5)sudo sh menu.sh;;
 				esac
 ;;
 #fin del menu principal
