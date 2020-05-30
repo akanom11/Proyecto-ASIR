@@ -1,6 +1,5 @@
 #!/bin/bash
 clear 
-## prueba
 ## Menu principal
 echo "  __  __                               _            _             _ ";
 echo " |  \/  |                             (_)          (_)           | |";
@@ -15,9 +14,10 @@ echo " ";
 echo 1.DHCP.
 echo 2.DNS
 echo 3.SAMBA
-echo 4.Copias de seguridad
-echo 5.Opciones del servidor.
-echo 6.salir
+echo 4.Servidor Web
+echo 5.Copias de seguridad
+echo 6.Opciones del servidor.
+echo 7.salir
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
@@ -794,6 +794,115 @@ esac
 ##############################################################################################
 4) echo cargando
 clear
+echo " __          __  _     ";
+echo " \ \        / / | |    ";
+echo "  \ \  /\  / /__| |__  ";
+echo "   \ \/  \/ / _ \ '_ \ ";
+echo "    \  /\  /  __/ |_) |";
+echo "     \/  \/ \___|_.__/ ";
+echo "                       ";
+echo "                       ";
+	echo "¿Que deseas hacer?"
+	echo 1. "Instalar LAMP+Wordpress"
+	echo 2. "Menu principal"
+	read webopt
+		case $webopt in
+			1) clear
+			echo "Se va a empezar a intalar LAMP"
+			sleep 2
+			clear
+			sudo apt-get update
+			sudo apt-get install -y curl
+			sudo apt-get install -y apache2
+			#Permite trafico HTTP/HTTPS en el servidor
+			sudo ufw allow in "Apache Full"
+			sudo apt-get install -y mysql-server
+			clear
+			echo "Configuracion de MySQL"
+			sleep 2
+			sudo mysql_secure_installation
+			clear
+			sudo apt-get install -y php libapache2-mod-php php-mysql
+			clear
+			echo "Introduce el nombre de la base de datos para wordpress"
+			read wpdb
+			echo "Configurando base de datos para wordpress"
+			sudo mysql -e "CREATE DATABASE $wpdb DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
+			echo "Selecciona nombre de usuario para Wordpress"
+			read wpuser
+			echo "Selecciona contraseña para el usuario de wordpress"
+			read wppass
+			sudo mysql -e "GRANT ALL ON wordpress.* TO '$wpuser'@'localhost' IDENTIFIED BY '$wppass';"
+			sudo mysql -e "FLUSH PRIVILEGES;"
+			sudo apt install php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip
+			sudo systemctl restart apache2
+					clear
+					echo "============================================"
+					echo "configuracion de wordpress"
+					echo "============================================"
+					echo "Database Name: "
+					read $wpdb
+					echo "Database User: "
+					read  $wpuser
+					echo "Database Password: "
+					read $wppass
+					echo "run install? (y/n)"
+					read  run
+					if [ "$run" == n ] ; then
+					exit
+					else
+					echo "============================================"
+					echo "Se esta instalando Wordpress."
+					echo "============================================"
+					cd /var/www/html					
+					#download wordpress
+					curl -O https://wordpress.org/latest.tar.gz
+					#unzip wordpress
+					tar -zxvf latest.tar.gz
+					#change dir to wordpress
+					cd wordpress
+					#copy file to parent dir
+					cp -rf . ..
+					#move back to parent dir
+					cd ..
+					#remove files from wordpress folder
+					rm -R wordpress
+					#create wp config
+					cp wp-config-sample.php wp-config.php
+					#set database details with perl find and replace
+					perl -pi -e "s/database_name_here/$dbname/g" wp-config.php
+					perl -pi -e "s/username_here/$dbuser/g" wp-config.php
+					perl -pi -e "s/password_here/$dbpass/g" wp-config.php
+
+					#set WP salts
+					perl -i -pe'
+					  BEGIN {
+					    @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
+					    push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
+					    sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
+					  }
+					  s/put your unique phrase here/salt()/ge
+					' wp-config.php
+
+					#create uploads folder and set permissions
+					mkdir wp-content/uploads
+					chmod 775 wp-content/uploads
+					service apache2 restart
+					echo "Cleaning..."
+					#remove zip file
+					rm latest.tar.gz
+					echo "========================="
+					echo "Instalación completa."
+					echo "========================="
+					fi
+					;;
+				2) echo holaa;;
+				esac
+				;;
+			
+##############################################################################################
+5) echo cargando		
+clear
 echo "  ____             _                ";
 echo " |  _ \           | |               ";
 echo " | |_) | __ _  ___| | ___   _ _ __  ";
@@ -909,7 +1018,7 @@ echo ""
 							esac
 ;;
 ##############################################################################################
-5)echo cargando;
+6)echo cargando;
 	clear;
 
 echo "   _____                 _     _            ";
