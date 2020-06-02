@@ -832,7 +832,7 @@ echo "                       ";
 			read wpuser
 			echo "Selecciona contraseña para el usuario de wordpress"
 			read wppass
-			sudo mysql -e "GRANT ALL ON wordpress.* TO '$wpuser'@'localhost' IDENTIFIED BY '$wppass';"
+			sudo mysql -e "GRANT ALL ON $wpdb.* TO '$wpuser'@'localhost' IDENTIFIED BY '$wppass';"
 			sudo mysql -e "FLUSH PRIVILEGES;"
 			sudo apt install -y php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip
 			sudo systemctl restart apache2
