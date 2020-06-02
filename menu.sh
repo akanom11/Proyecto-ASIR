@@ -816,7 +816,7 @@ echo "                       ";
 			sudo apt-get install -y apache2
 			#Permite trafico HTTP/HTTPS en el servidor
 			sudo ufw allow in "Apache Full"
-			sudo apt-get install -y mysql-server
+			sudo apt-get install -y mariadb-server
 			clear
 			echo "Configuracion de MySQL"
 			sleep 2
@@ -834,7 +834,7 @@ echo "                       ";
 			read wppass
 			sudo mysql -e "GRANT ALL ON wordpress.* TO '$wpuser'@'localhost' IDENTIFIED BY '$wppass';"
 			sudo mysql -e "FLUSH PRIVILEGES;"
-			sudo apt install php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip
+			sudo apt install -y php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip
 			sudo systemctl restart apache2
 					clear
 					echo "============================================"
@@ -870,9 +870,9 @@ echo "                       ";
 					#create wp config
 					cp wp-config-sample.php wp-config.php
 					#set database details with perl find and replace
-					perl -pi -e "s/database_name_here/$dbname/g" wp-config.php
-					perl -pi -e "s/username_here/$dbuser/g" wp-config.php
-					perl -pi -e "s/password_here/$dbpass/g" wp-config.php
+					perl -pi -e "s/database_name_here/$wpdb/g" wp-config.php
+					perl -pi -e "s/username_here/$wpuser/g" wp-config.php
+					perl -pi -e "s/password_here/$wppass/g" wp-config.php
 
 					#set WP salts
 					perl -i -pe'
