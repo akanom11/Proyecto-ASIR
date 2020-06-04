@@ -21,7 +21,8 @@ echo 7.salir
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
-	## submenu DHCP 
+###########DHCP###########
+	##Menu DHCP
 	case $opcion in
 		1) clear;
  		echo "  _____  _    _  _____ _____  ";
@@ -39,12 +40,12 @@ echo "                              ";
 		echo 4. Reiniciar servidor;
 		echo 5.Ver estado del servidor;
 		echo 6.Menu principal;
-		echo -n "selecciona una opcion:";
+		echo -n "Elige una opcion:";
 		read opciondhcp;
 			## Submenu de DHCP
 			case $opciondhcp in
 				1) cat /var/lib/dhcp/dhcpd.leases;;
-				2)echo -n "Introduce nombre del host: " 
+				2)echo -n "Introduce nombre del host: "
 				read nombrehost
 				echo -n "Introduce MAC del host(xx:xx:xx:xx:xx:xx): "
 				read machost
@@ -55,39 +56,39 @@ hardware ethernet $machost;
  fixed-address $iphost;}" >> /etc/dhcp/dhcpd.conf;;
 				3)echo ASEGURATE DE TENER CONEXION A INTERNET
 				  echo instalando isc-dhcp-server...
-					sudo apt-get install isc-dhcp-server
+					sudo apt-get install -y isc-dhcp-server
 				 clear
 				## para ver la tarjeta de red si no se sabe 
 				ip a
-				echo -n introduce la interfaz de escucha.
+				echo -n "Introduce la interfaz de escucha: "
 				read int
 				#cambia la tarjeta de red en el archivo isc-dhcp-server
 				sed -i 's|INTERFACESv4=""|INTERFACESv4="'$int'"|g' /etc/default/isc-dhcp-server
 				clear
 				 echo interfaz cambiada.
 				## Aqui se extraen las variables para cambiar en el archivo de configuración
-				echo -n "introduce el nombre de dominio:"
+				echo -n "introduce el nombre de dominio: "
 				read dominiodhcp
-				echo -n "introduce la ip del servidor DNS:"
+				echo -n "introduce la ip del servidor DNS: "
 				read servidordhcp
-				echo -n "introduce direccion de red:"
+				echo -n "introduce direccion de red: "
 				read reddhcp
-				echo -n "introduce mascara de red:"
+				echo -n "introduce mascara de red: "
 				read maskdhcp
 				echo -n "Introduce la direccion de gateway: "
 				read gatewaydhcp
-				echo -n "introduce la direccion de broadcast:"
+				echo -n "introduce la direccion de broadcast: "
 				read broadcastdhcp
-				echo -n "introduce primera direccion usable por el dhcp:"
+				echo -n "introduce primera direccion usable por el dhcp: "
 				read range1dhcp
-				echo -n "introduce la ultima direccion usable por el dhcp:"
+				echo -n "introduce la ultima direccion usable por el dhcp: "
 				read range2dhcp
 				echo aplicando configuración...
 				## Backup del archivo de configuracion principal
 				sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.copy
 				## Vaciamos el fichero 
 				sudo cat /dev/null > /etc/dhcp/dhcpd.conf
-## Plantilla del fichero de configuración quitando las cosas 'no esenciales"
+## Plantilla del fichero de configuración.
 echo "# No permitimos actualizaciones dinamicas de dns
 ddns-update-style none;
 
@@ -127,20 +128,21 @@ sed -i 's|difusion|'$broadcastdhcp'|g' /etc/dhcp/dhcpd.conf
 sed -i 's|pedhcp|'$gatewaydhcp'|g' /etc/dhcp/dhcpd.conf
 sudo service isc-dhcp-server restart
 echo DHCP configurado!!;;
-				4) echo -n Se va a reiniciar el servidor, ¿quieres continuar? y/n.  
+				4) echo -n "Se va a reiniciar el servidor, ¿quieres continuar? (y/n). "
 					read reiniciaryn
 						if [ $reiniciaryn = y ] 
 						then
 							sudo service isc-dhcp-server restart
 							echo Servidor reiniciado.
-						else 
+						else
 							echo Vale, no se reinicia.
 						fi;;
 				5) sudo service isc-dhcp-server status;;
-				6) sudo sh menu.sh;;	
+				6) sudo ./menu.sh;;
 		#fin del submenu dhcp
 		esac
 ;;
+########### DNS ############
 2)clear;
 echo "  _____  _   _  _____ ";
 echo " |  __ \| \ | |/ ____|";
@@ -153,9 +155,11 @@ echo "                      ";
 echo 1.Añadir zona
 echo 2.Añadir registro a zona
 echo 3.Instalación
+echo 4.Menu principal
 echo -n "Elige una opcion: "
 read opciondns
-case $opciondns in 
+case $opciondns in
+		#Submenu DNS
 		1)clear
 		 echo se va a proceder a crear una zona nueva.
 #introducion de datos de la zona
@@ -182,7 +186,7 @@ case $opciondns in
 echo "zone newnamezone {
         type priosec;
         file newnameconf;
-};" >> /etc/bind/named.conf.local 
+};" >> /etc/bind/named.conf.local
 #sustitucion de datos
 sed -i 's|newnamezone|"'$newnamezone'"|g' /etc/bind/named.conf.local
 sed -i 's|newnameconf|"'/etc/bind/$dbnew'"|g' /etc/bind/named.conf.local
@@ -195,7 +199,7 @@ cat /dev/null > /etc/bind/$dbnew
 touch /etc/bind/$dbnew
 fi
 #introducion de la plantilla de zona
-echo " 
+echo "
 sus	86400
 @	IN	SOA	nombresubd. root.domain. (
 			      1		; Serial
@@ -230,9 +234,9 @@ fi
 sed -i 's|sus|$TTL|g' /etc/bind/$dbnew
 sed -i 's|nombreserver|'$nombreserver'|g' /etc/bind/$dbnew
 sed -i 's|domain|'$domain'|g' /etc/bind/$dbnew
-####################
+#################### FIN ZONA DIRECTA ########################
 echo "Se ha añadido el servidor a la zona directa, para añadir más usa la opción de añadir del menu DNS"
-####################
+#################### Zona inversa ############################
 #opcion crear zona inversa al hacer la directa
 	echo -n "¿Quieres crear la zona inversa de esta zona?(s/n): "
 	read crearinv
@@ -300,10 +304,11 @@ echo Zonas creadas
 else 
 echo zona directa creada
 fi
-############################################ else si no se elige directa desde el principio
-else
 ############################################
-clear 
+#else si no se elige directa desde el principio
+############################################
+else
+clear
 echo se va a proceder a crear una zona inversa
 clear
 echo -n "¿Va a ser un servidor primario o secundario?(p/s): "
@@ -377,7 +382,7 @@ echo zona inversa creada
 fi
 
 ;;
-###################################################################################################################
+######################################## Opcion añadir registro ###########################################################################
 	2)clear 
 	echo Tipos de registro.
 	echo " "
@@ -389,7 +394,7 @@ fi
 	echo -n Selecciona una opcion
 	read opcSOA
 case $opcSOA in
-		1)clear 
+		1)clear
 			echo Has seleccionado registro A.
 			echo Selecciona una zona
 			ls /etc/bind/db.*	
@@ -496,11 +501,11 @@ case $opcSOA in
 esac 
 ;;
 
-###################################################################################################################
+######################################## Instalacion del servidor DNS ###########################################################################
 	3)echo Se va a empezar a instalar y configurar el servidor DNS
 		echo ASEGURATE DE TENER CONEXION A INTERNET
 		sleep 3
-		apt-get install bind9
+		apt-get install -y bind9
 #vaciamos y cargamos plantilla del reenviador que normalmente es google
 cat /dev/null > /etc/bind/named.conf.options
 echo "options {
@@ -591,7 +596,7 @@ echo -n "introduce nombre de la maquina:  "
 read nombreentrada
 echo -n "introduce IP de la maquina: "
 read ipmaquina
-echo $nombremaquina	IN	A	$ipmaquina >> /etc/bind/$zonename
+echo $nombreentrada	IN	A	$ipmaquina >> /etc/bind/$zonename
 echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
 read ponerentrada
 done
@@ -667,6 +672,7 @@ echo "Configuración del DNS completada"
 #serverACM.dominioacm.edu.	IN	A	192.168.20.1
 
 ;;
+4) sudo sh menu.sh;;
 esac
 ;;
 ##############################################################################################
@@ -683,6 +689,8 @@ echo "                                  ";
 echo 1. Instalacion
 echo 2. Usuarios samba
 echo 3. Añadir recurso a samba.
+echo 4. Montar recurso samba.
+echo 5. Menu principal
 echo -n "selecciona una opcion: "
 read optsamba
 case  $optsamba in
@@ -788,7 +796,8 @@ sed -i 's|escritura|'$smbwrite'|g' /etc/samba/smb.conf
 sed -i 's|inv|'$smbpublic'|g' /etc/samba/smb.conf
 service smbd restart
 ;;
-
+4) echo Working;;
+5) sudo ./menu.sh;;
 esac
 ;;
 ##############################################################################################
@@ -805,6 +814,7 @@ echo "                       ";
 	echo "¿Que deseas hacer?"
 	echo 1. "Instalar LAMP+Wordpress"
 	echo 2. "Menu principal"
+	echo -n "Elige una opción: "
 	read webopt
 		case $webopt in
 			1) clear
@@ -831,7 +841,7 @@ echo "                       ";
 			echo "Selecciona nombre de usuario para Wordpress"
 			read wpuser
 			echo "Selecciona contraseña para el usuario de wordpress"
-			read wppass
+			read -s wppass
 			sudo mysql -e "GRANT ALL ON $wpdb.* TO '$wpuser'@'localhost' IDENTIFIED BY '$wppass';"
 			sudo mysql -e "FLUSH PRIVILEGES;"
 			sudo apt install -y php-curl php-gd php-mbstring php-xml php-xmlrpc php-soap php-intl php-zip
@@ -840,13 +850,7 @@ echo "                       ";
 					echo "============================================"
 					echo "configuracion de wordpress"
 					echo "============================================"
-					echo "Database Name: "
-					read $wpdb
-					echo "Database User: "
-					read  $wpuser
-					echo "Database Password: "
-					read $wppass
-					echo "run install? (y/n)"
+					echo "¿Ejecutar instalación? (y/n)"
 					read  run
 					if [ "$run" == n ] ; then
 					exit
@@ -854,27 +858,28 @@ echo "                       ";
 					echo "============================================"
 					echo "Se esta instalando Wordpress."
 					echo "============================================"
-					cd /var/www/html					
-					#download wordpress
+					#Cambiar al directorio del server web para realizar la instalacion
+					cd /var/www/html
+					#Descargar Wordpress
 					curl -O https://wordpress.org/latest.tar.gz
 					#unzip wordpress
 					tar -zxvf latest.tar.gz
-					#change dir to wordpress
+					#Cambiar al directorio wordpress
 					cd wordpress
-					#copy file to parent dir
+					#copiar del directorio padre
 					cp -rf . ..
-					#move back to parent dir
+					#mover hacia el directorio padre
 					cd ..
-					#remove files from wordpress folder
+					#Eliminar todo del directorio wordpress
 					rm -R wordpress
-					#create wp config
+					#creando wp config
 					cp wp-config-sample.php wp-config.php
-					#set database details with perl find and replace
+					#buscar y reemplazar la configuracion
 					perl -pi -e "s/database_name_here/$wpdb/g" wp-config.php
 					perl -pi -e "s/username_here/$wpuser/g" wp-config.php
 					perl -pi -e "s/password_here/$wppass/g" wp-config.php
 
-					#set WP salts
+					#introducir WP salts
 					perl -i -pe'
 					  BEGIN {
 					    @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
@@ -896,10 +901,10 @@ echo "                       ";
 					echo "========================="
 					fi
 					;;
-				2) echo holaa;;
+				2) sudo ./menu.sh;;
 				esac
 				;;
-			
+
 ##############################################################################################
 5) echo cargando		
 clear
@@ -917,7 +922,8 @@ echo ""
 				echo 1. Copiar.
 				echo 2. Recuperar.
 				echo 3. Programar copia.
-				echo "Elige una opcion: "
+				echo 4. Menu principal.
+				echo -n "Elige una opcion: "
 				read backupopt
 					case $backupopt in
 						1) clear
@@ -1015,6 +1021,7 @@ echo ""
 							sudo sed -i '$i 00 23	* * * root /copias/'$progname'.sh' /etc/crontab
 							echo "Copia programada, para editar o borrar la copia borra el archivo .sh generado en /copias y la entrada en /etc/crontab."
 							;;
+							4) sudo ./menu.sh
 							esac
 ;;
 ##############################################################################################
@@ -1237,7 +1244,7 @@ nologfd
 				echo "Introduce nombre de usuario para VPN"
 				read userpptp
 				echo "Introduce contraseña para VPN"
-				read passpptp
+				read -s passpptp
 				sudo cat /dev/null > /etc/ppp/chap-secrets
 				echo " 
 				# Secrets for authentication using CHAP
@@ -1254,7 +1261,7 @@ clear
 				sleep 3				
 				esac
 				;;
-				5)sudo sh menu.sh;;
+				5)sudo ./menu.sh;;
 				esac
 ;;
 #fin del menu principal
