@@ -17,7 +17,8 @@ echo 3.SAMBA
 echo 4.Servidor Web
 echo 5.Copias de seguridad
 echo 6.Opciones del servidor.
-echo 7.salir
+echo 7.Seguridad.
+echo 8.salir
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
@@ -1039,7 +1040,7 @@ echo "                                            ";
 	echo 1. Modificar /etc/hosts;
 	echo 2. Modificar hostname;
 	echo 3. Usar servidor como enrutador.
-	echo 4. Conectividad.
+	echo 4. VPN.
 	echo 5. Menu principal.;
 	echo -n "elige una opcion: " ;
 	read submenuopciones;
@@ -1147,12 +1148,7 @@ fi;;
 				fi
 				;;
 				4)clear
-				echo "selecciona una opción"
-				echo 1."VPN"
-				echo 2."Cambiar puerto SSH"
-				read opcionconect
-				case $opcionconect in
-					1)echo "La configuración de usuario y contraseña se hace desde /etc/ppp/chap-secrets, si ya esta instalado cancela"
+				echo "La configuración de usuario y contraseña se hace desde /etc/ppp/chap-secrets, si ya esta instalado cancela"
 						sleep 3						
 						echo "se va a proceder a instalar el servidor."
 					sudo apt-get install -y ppdpd
@@ -1165,7 +1161,7 @@ fi;;
 					sudo cat /dev/null > /etc/pptpd.conf
 					echo "
 					###############################################################################
-# $Id$
+# "'$Id'"
 #
 # Sample Poptop configuration file /etc/pptpd.conf
 #
@@ -1258,12 +1254,63 @@ clear
 				echo "PPTP instalado"
 				echo "AVISO:
 				Si deseas que sea accesible desde internet es necesario abrir el puerto 1723 en el router o firewall"			
-				sleep 3				
-				esac
+				sleep 3			
 				;;
 				5)sudo ./menu.sh;;
-				esac
+				esac ;;
+#############################################SEGURIDAD#######################################################################
+7) echo cargando..
+clear
+echo "   _____                       _     _           _ ";
+echo "  / ____|                     (_)   | |         | |";
+echo " | (___   ___  __ _ _   _ _ __ _  __| | __ _  __| |";
+echo "  \___ \ / _ \/ _\` | | | | '__| |/ _\` |/ _\` |/ _\` |";
+echo "  ____) |  __/ (_| | |_| | |  | | (_| | (_| | (_| |";
+echo " |_____/ \___|\__, |\__,_|_|  |_|\__,_|\__,_|\__,_|";
+echo "               __/ |                               ";
+echo "              |___/                                ";
+echo ""
+echo ""
+	echo 1.Cambiar puertos de servicios.
+	echo 2.Menu principal
+	echo -n "Elige una opcion: "
+	echo ""
+	echo "..."
+	read optsec
+		case $optsec in 
+			1) echo cargando...
+			clear
+			echo "Selecciona el servicio que quieres cambiar el puerto: "
+			echo "1. ssh"
+			echo "2. VPN"
+			echo "3. VNC"
+			echo ""
+			echo -n "Selecciona una opcion: "
+			read optport
+			case $optport in
+				1) clear	
+					portact=`sudo cat /etc/ssh/sshd_config  | grep "Port " | cut -f2 -d " "`
+					echo -n "El puerto actual de ssh es $portact, ¿quieres cambiarlo? [s/n]: "
+					read cambiar
+					if [ $cambiar = s ]
+						then
+					echo -n "seleciona nuevo puerto: "
+					read nuevoport
+					sudo perl -pi -e 's/^#?Port '$portact'$/Port '$nuevoport'/' /etc/ssh/sshd_config
+					echo "Puerto ssh cambiado al $nuevoport, para conectarte por favor, usa -p y el puerto."
+					service ssh restart && service ssh status
+					else 
+					exit
+					fi
 ;;
+				2) echo vnc;
+
+			esac ;;
+			2) sudo ./menu.sh;;
+		esac;;
+					
+			
+
 #fin del menu principal
 esac
 #fin del menu principal
