@@ -1295,10 +1295,10 @@ echo "              |___/                                ";
 echo ""
 echo ""
 	echo 1.Cambiar puertos de servicios.
+	echo 2.PortKnocking
 	echo 2.Menu principal
 	echo -n "Elige una opcion: "
 	echo ""
-	echo "..."
 	read optsec
 		case $optsec in 
 			1) echo cargando...
@@ -1329,7 +1329,43 @@ echo ""
 				2) echo vnc;
 
 			esac ;;
-			2) sudo ./menu.sh;;
+			2) clear
+				echo "Se va a proceder a instalar el demos knock."
+				sleep 2
+				sudo apt-get install -y knockd
+				clear
+				echo -n "introduce 3 puertos separados con comas y sin espacios para abrir ssh. ejem(10,20,30): "
+				read portapertura
+				echo "   "
+				echo "   "
+				echo -n "Introduce 3 puertos separados con comas y sin espacios para cerrar ssh. ejem(10,20,30): "
+				read portcerrado
+				echo "   "
+				echo "   "
+				echo -n "Introduce tu interfaz de red: "
+				read intknk
+				portact=`sudo cat /etc/ssh/sshd_config  | grep "Port " | cut -f2 -d " "`
+				sudo cat /dev/null > /etc/knockd.conf
+				sudo echo  "
+ [options]
+        UseSyslog
+	interface = $intknk
+[openSSH]
+        sequence    = $portapertura
+        seq_timeout = 5
+        command     = /sbin/iptables -A INPUT -s %IP% -p tcp --dport $portact -j ACCEPT
+        tcpflags    = syn
+
+[closeSSH]
+        sequence    = $portcerrado
+        seq_timeout = 5
+        command     = /sbin/iptables -D INPUT -s %IP% -p tcp --dport $portact -j ACCEPT
+        tcpflags    = syn" >> /etc/knockd.conf
+		sudo perl -pi -e 's/^#?START_KNOCKD=0$/START_KNOCKD=1/' /etc/default/knockd
+		sudo service knockd start
+		sudo service knockd restart
+;;
+			3) sudo ./menu.sh;;
 		esac;;
 					
 			
