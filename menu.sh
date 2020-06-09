@@ -1257,7 +1257,9 @@ clear
 				Si deseas que sea accesible desde internet es necesario abrir el puerto 1723 en el router o firewall"			
 				sleep 3			
 				;;
-				5) echo "Se va a proceder a instalar VNC"
+				5) echo cargando...
+				clear
+				echo "Se va a proceder a instalar VNC"
 				sleep 3
 				echo "Selecciona el entorno de escritorio que deseas instalar"
 				echo "1. Gnome"
@@ -1267,14 +1269,16 @@ clear
 				echo "¿Cual deseas instalar?"
 				read entorno
 				case $entorno in
-					1)
-				 sudo apt-get install -y --no-install-recommends ubuntu-desktop gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal gnome-core;;
-					2) sudo apt-get install xorg lxde-core;;
-					3) sudo apt-get install xfce4 xfce4-goodies;;
+					1) sudo apt-get install -y --no-install-recommends ubuntu-desktop gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal gnome-core
+					sudo apt-get install -y tightvncserver
+                                	sudo vncserver;;
+					2) sudo apt-get install xorg lxde-core
+					sudo apt-get install -y tightvncserver
+                                	sudo vncserver;;
+					3) sudo apt-get install xfce4 xfce4-goodies
+					sudo apt-get install -y tightvncserver
+                                	sudo vncserver;;
 				esac ;;
-				sudo apt-get install -y tightvncserver
-				sudo vncserver
-				
 				6)sudo ./menu.sh;;
 				esac ;;
 #############################################SEGURIDAD#######################################################################
