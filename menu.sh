@@ -1295,8 +1295,9 @@ echo "              |___/                                ";
 echo ""
 echo ""
 	echo 1.Cambiar puertos de servicios.
-	echo 2.PortKnocking
-	echo 2.Menu principal
+	echo 2. Bloquear usuario root de ssh
+	echo 3.PortKnocking
+	echo 4.Menu principal
 	echo -n "Elige una opcion: "
 	echo ""
 	read optsec
@@ -1305,8 +1306,7 @@ echo ""
 			clear
 			echo "Selecciona el servicio que quieres cambiar el puerto: "
 			echo "1. ssh"
-			echo "2. VPN"
-			echo "3. VNC"
+			echo "2. VNC"
 			echo ""
 			echo -n "Selecciona una opcion: "
 			read optport
@@ -1320,7 +1320,7 @@ echo ""
 					echo -n "seleciona nuevo puerto: "
 					read nuevoport
 					sudo perl -pi -e 's/^#?Port '$portact'$/Port '$nuevoport'/' /etc/ssh/sshd_config
-					echo "Puerto ssh cambiado al $nuevoport, para conectarte por favor, usa -p y el puerto."
+					echo "Puerto ssh cambiado al $nuevoport, para conectarte  usa -p y el puerto."
 					service ssh restart && service ssh status
 					else 
 					exit
@@ -1330,9 +1330,18 @@ echo ""
 
 			esac ;;
 			2) clear
+			sudo sed -i "s/.*PermitRootLogin.*/PermitRootLogin no/g" /etc/ssh/sshd_config
+			echo "Usuario root deshabilitado!"
+			sudo service ssh restart
+;;
+			3) clear
 				echo "Se va a proceder a instalar el demos knock."
 				sleep 2
 				sudo apt-get install -y knockd
+					sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+                                        sudo iptables -A INPUT -p tcp --dport 22 -j REJECT
+                                        sudo netfilter-persistent save
+                                        sudo netfilter-persistent reload
 				clear
 				echo -n "introduce 3 puertos separados con comas y sin espacios para abrir ssh. ejem(10,20,30): "
 				read portapertura
@@ -1361,11 +1370,20 @@ echo ""
         seq_timeout = 5
         command     = /sbin/iptables -D INPUT -s %IP% -p tcp --dport $portact -j ACCEPT
         tcpflags    = syn" >> /etc/knockd.conf
-		sudo perl -pi -e 's/^#?START_KNOCKD=0$/START_KNOCKD=1/' /etc/default/knockd
+		sudo cat /dev/null > /etc/default/knockd
+		sudo echo "
+		# control if we start knockd at init or not
+# 1 = start
+# anything else = don't start
+# PLEASE EDIT /etc/knockd.conf BEFORE ENABLING
+START_KNOCKD=1
+
+# command line options
+KNOCKD_OPTS="-i $intknk" " >> /etc/default/knockd
 		sudo service knockd start
 		sudo service knockd restart
 ;;
-			3) sudo ./menu.sh;;
+			4) sudo ./menu.sh;;
 		esac;;
 					
 			
