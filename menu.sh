@@ -699,6 +699,7 @@ case  $optsamba in
 	apt-get -y install samba
 	apt-get -y install samba-common-tools
 	apt-get -y install samba-client
+	apt-get -y install cifs-utils
 	#habilitamos el inicio de samba al inicio del sistema
 	systemctl start smb
 	systemctl enable smb
@@ -797,7 +798,25 @@ sed -i 's|escritura|'$smbwrite'|g' /etc/samba/smb.conf
 sed -i 's|inv|'$smbpublic'|g' /etc/samba/smb.conf
 service smbd restart
 ;;
-4) echo Working;;
+4) clear
+echo "Se va a proceder a montar un recurso samba"
+echo -n "¿Donde quieres montar el recurso?: "
+read montarsmb
+echo ""
+echo -n "Introduce la ruta del directorio a montar ej:(//192.168.1.100/share): "
+read recursomount
+echo ""
+echo -n "Introduce nombre de usuario para acceder al recurso: "
+read ususmb
+if [ -d $montarsmb ]
+then
+sudo mount.cifs $recursomount $montarsmb -o user=$ususmb
+else
+sudo mkdir $montarsmb
+sudo mount.cifs $recursomount $montarsmb -o user=$ususmb
+fi
+echo "Recurso montado!"
+;;
 5) sudo ./menu.sh;;
 esac
 ;;
