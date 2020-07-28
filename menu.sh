@@ -1,6 +1,8 @@
 #!/bin/bash
-clear 
+clear
 ## Menu principal
+MenuPrincipal() {
+clear
 echo "  __  __                               _            _             _ ";
 echo " |  \/  |                             (_)          (_)           | |";
 echo " | \  / | ___ _ __  _   _   _ __  _ __ _ _ __   ___ _ _ __   __ _| |";
@@ -22,10 +24,21 @@ echo 8.salir
 echo "";
 echo -n "Selecciona una opción: " 
 read opcion 
+case $opcion in
+1) MenuDHCP;;
+2) MenuDNS;;
+3) MenuSAMBA;;
+4) MenuWEB;;
+5) MenuBACKUP;;
+6) MenuSERVER;;
+7) MenuSEC;;
+8) break;;
+esac
+}
 ###########DHCP###########
 	##Menu DHCP
-	case $opcion in
-		1) clear;
+MenuDHCP() {
+		clear;
  		echo "  _____  _    _  _____ _____  ";
 echo " |  __ \| |  | |/ ____|  __ \ ";
 echo " | |  | | |__| | |    | |__) |";
@@ -139,12 +152,13 @@ echo DHCP configurado!!;;
 							echo Vale, no se reinicia.
 						fi;;
 				5) sudo service isc-dhcp-server status;;
-				6) sudo ./menu.sh;;
+				6) MenuPrincipal;;
 		#fin del submenu dhcp
 		esac
-;;
+}
 ########### DNS ############
-2)clear;
+MenuDNS() {
+clear;
 echo "  _____  _   _  _____ ";
 echo " |  __ \| \ | |/ ____|";
 echo " | |  | |  \| | (___  ";
@@ -673,12 +687,12 @@ echo "Configuración del DNS completada"
 #serverACM.dominioacm.edu.	IN	A	192.168.20.1
 
 ;;
-4) sudo sh menu.sh;;
+4) MenuPrincipal;;
 esac
-;;
-##############################################################################################
-3)echo cargando; 
-clear;
+}
+#########################Menu SAMBA#####################################################################
+MenuSAMBA() {
+clear
 echo "                      _           ";
 echo "                     | |          ";
 echo "  ___  __ _ _ __ ___ | |__   __ _ ";
@@ -817,11 +831,12 @@ sudo mount.cifs $recursomount $montarsmb -o user=$ususmb
 fi
 echo "Recurso montado!"
 ;;
-5) sudo ./menu.sh;;
+5) MenuPrincipal;;
 esac
-;;
-##############################################################################################
-4) echo cargando
+
+}
+############################SERVER WEB##################################################################
+MenuWEB() {
 clear
 echo " __          __  _     ";
 echo " \ \        / / | |    ";
@@ -921,12 +936,12 @@ echo "                       ";
 					echo "========================="
 					fi
 					;;
-				2) sudo ./menu.sh;;
+				2) MenuPrincipal;;
 				esac
-				;;
-
-##############################################################################################
-5) echo cargando		
+				
+}
+#############################BACKUP#################################################################
+MenuBACKUP() {		
 clear
 echo "  ____             _                ";
 echo " |  _ \           | |               ";
@@ -1041,11 +1056,11 @@ echo ""
 							sudo sed -i '$i 00 23	* * * root /copias/'$progname'.sh' /etc/crontab
 							echo "Copia programada, para editar o borrar la copia borra el archivo .sh generado en /copias y la entrada en /etc/crontab."
 							;;
-							4) sudo ./menu.sh
+							4) MenuPrincipal;;
 							esac
-;;
+}
 ##############################################################################################
-6)echo cargando;
+MenuSERVER() {
 	clear;
 
 echo "   _____                 _     _            ";
@@ -1298,10 +1313,11 @@ clear
 					sudo apt-get install -y tightvncserver
                                 	sudo vncserver;;
 				esac ;;
-				6)sudo ./menu.sh;;
-				esac ;;
+				6)MenuPrincipal;;
+				esac 
+				}
 #############################################SEGURIDAD#######################################################################
-7) echo cargando..
+MenuSEC() {
 clear
 echo "   _____                       _     _           _ ";
 echo "  / ____|                     (_)   | |         | |";
@@ -1402,11 +1418,7 @@ KNOCKD_OPTS="-i $intknk" " >> /etc/default/knockd
 		sudo service knockd start
 		sudo service knockd restart
 ;;
-			4) sudo ./menu.sh;;
-		esac;;
-					
-			
-
-#fin del menu principal
-esac
-#fin del menu principal
+			4) MenuPrincipal;;
+		esac
+}					
+MenuPrincipal
