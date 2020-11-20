@@ -65,7 +65,7 @@ echo "                              ";
 				read machost
 				echo -n "introduce IP: "
 				read iphost
-				sudo echo "$nombrehost {
+				sudo echo "host $nombrehost {
 hardware ethernet $machost;
  fixed-address $iphost;}" >> /etc/dhcp/dhcpd.conf;;
 				3)echo ASEGURATE DE TENER CONEXION A INTERNET
@@ -126,7 +126,7 @@ log-facility local7;
 subnet red1 netmask mascara {
   range rango1 rango2;
   option broadcast-address difusion;
-  option routers pedhcp
+  option routers pedhcp;
 }
 
 
@@ -465,7 +465,7 @@ case $opcSOA in
 			sleep 1
 			echo -n "introduce alias de la maquina:  "
 			read cname
-			echo -n "introduce nombre verdadero"
+			echo -n "introduce nombre verdadero: "
 			read realname
 			echo $cname      IN      CNAME     $realname >> /etc/bind/$zonaSOA
 			echo -n "entrada añadida, ¿quieres añadir otra más? (s/n): "
@@ -1163,7 +1163,7 @@ fi;;
 				sleep 2
 				apt-get update
 				apt-get install -y iptables-persistent
-				service iptables-persistent start
+				sudo service netfilter-persistent start
 				else
 				clear
   				sysctl -w net.ipv4.ip_forward=1
@@ -1186,7 +1186,7 @@ fi;;
 				echo "La configuración de usuario y contraseña se hace desde /etc/ppp/chap-secrets, si ya esta instalado cancela"
 						sleep 3						
 						echo "se va a proceder a instalar el servidor."
-					sudo apt-get install -y ppdpd
+					sudo apt-get install -y pptpd
 					clear
 					echo "Se va a proceder a configurar el servicio PPTP"
 					echo "Introduce tu direccion IP"
@@ -1280,10 +1280,10 @@ nologfd
 				echo " 
 				# Secrets for authentication using CHAP
 # client        server  secret                  IP addresses
-nombre	server	pass	*
+nombre	serverr	pass	*
 " >> /etc/ppp/chap-secrets
 				sed -i 's|nombre|'$userpptp'|g' /etc/ppp/chap-secrets
-				sed -i 's|server|'$namepptp'|g' /etc/ppp/chap-secrets
+				sed -i 's|serverr|'$namepptp'|g' /etc/ppp/chap-secrets
 				sed -i 's|pass|'$passpptp'|g' /etc/ppp/chap-secrets
 clear
 				echo "PPTP instalado"
